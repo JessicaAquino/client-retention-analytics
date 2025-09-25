@@ -1,12 +1,9 @@
 import polars as pl
-import numpy as np
-import logging
+import src.utils.logger_wrapper as log
 
 from src.utils.duck_db_conn import run_duckdb_query
 
-logger = logging.getLogger(__name__)
-
-
+@log.process_log
 def feature_engineering_pipeline(df: pl.DataFrame, config: dict) -> pl.DataFrame:
     """
     Ejecuta el pipeline de feature engineering completo
@@ -45,8 +42,6 @@ def feature_engineering_pipeline(df: pl.DataFrame, config: dict) -> pl.DataFrame
 
     sql = "SELECT *"
 
-    logger.info(f"Starting feature engineering pipeline. df shape: {df.shape}")
-
     if "lag" in config:
         for col in config["lag"]["columns"]:
             for i in range(1, config["lag"]["n"] + 1):
@@ -78,6 +73,35 @@ def feature_engineering_pipeline(df: pl.DataFrame, config: dict) -> pl.DataFrame
 
     df = run_duckdb_query(df, sql)
 
-    logger.info(f"Feature engineering pipeline completed. df shape: {df.shape}")
+    return df
+
+@log.process_log
+def add_lag_features(df: pl.DataFrame, columns: list, n: int) -> pl.DataFrame:
+    """
+    Agrega features de lag según el listado y cantidad de lags indicados
+    
+    Parameters:
+    -----------
+    df: pl.DataFrame
+        DataFrame de entrada
+    columns: list
+        Listado de columnas para aplicarles lags
+    n: int
+        Cantidad de lags por columna
+    
+    Returns:
+    --------
+    pl.DataFrame
+        DataFrame con las nuevas features de lag agregadas
+    """
+    sql = "SELECT *"
+
+    for col in columns:
+        for i in range(1, n+1):
+            sql += f", lag({col}, {i}) OVER (PARTITION BY numero_de_cliente ORDER BY foto_mes) AS {col}_lag_{i}"
+    
+    sql += " FROM df"
+    
+    df = run_duckdb_query(df, sql)
 
     return df

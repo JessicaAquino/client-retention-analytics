@@ -1,11 +1,8 @@
 import polars as pl
-import logging
+import src.utils.logger_wrapper as log
 
-logger = logging.getLogger(__name__)
-
+@log.process_log
 def col_selection(df: pl.DataFrame) -> tuple[list[str], list[list[str]]]:
-    logger.info("Comienzo de la extracción de la selección de las columnas")
-
     # Columns to drop
     col_drops = {
         "numero_de_cliente", "foto_mes", "active_quarter", "clase_ternaria",
@@ -42,7 +39,5 @@ def col_selection(df: pl.DataFrame) -> tuple[list[str], list[list[str]]]:
         match = next((m for m in lista_m if m[1:] == suffix), None)
         if match:
             cols_ratios.append([match, c])
-
-    logger.info("Finalización de la construcción de las columnas")
 
     return cols_lag_delta_max_min_regl, cols_ratios
