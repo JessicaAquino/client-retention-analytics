@@ -1,7 +1,3 @@
-import polars as pl
-import numpy as np
-import os
-import datetime
 import logging
 
 import src.feature_engineering as fe
@@ -47,6 +43,8 @@ def main():
             "window": 3  # optional, for flexibility
         }
     })
+
+    # df = fe.add_lag_features(df, cols[0], n=2)
 
     logger.info("Pipeline ENDED!")
 
