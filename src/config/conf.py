@@ -28,24 +28,3 @@ def load_config(section = "competencia01") -> dict:
         logger.exception(f"Unexpected error loading config from {CONFIG_FILE}: {e}")
     
     return section_config
-# import yaml
-# import os
-# import logging
-
-# logger = logging.getLogger(__name__)
-
-# PATH_CONFIG = os.path.abspath(
-#     os.path.join(os.path.dirname(__file__), "..", "..", "conf.yaml")
-# )
-
-# try:
-#     with open(PATH_CONFIG, 'r') as file:
-#         config = yaml.safe_load(file)
-#         competencia01_config = config['competencia01']
-
-
-
-# except Exception as e:
-#     logger.error(f"Error al cargar el archivo de configuración: '{PATH_CONFIG}': {e}")
-
-

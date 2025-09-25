@@ -1,9 +1,9 @@
-import pandas as pd
+import polars as pl
 import logging
 
 logger = logging.getLogger(__name__)
 
-def load_data(path: str, format: str = "csv") -> pd.DataFrame | None:
+def load_data(path: str, format: str = "csv") -> pl.DataFrame | None:
     """
     Carga el archivo ubicado en 'path' y lo devuelve en un dataframe
 
@@ -14,7 +14,7 @@ def load_data(path: str, format: str = "csv") -> pd.DataFrame | None:
   
     Returns:
     --------
-    pd.DataFrame
+    pl.DataFrame
         DataFrame con los datos cargados
     """
     
@@ -22,7 +22,7 @@ def load_data(path: str, format: str = "csv") -> pd.DataFrame | None:
 
     try:
         if format == "csv":
-            df = pd.read_csv(path)
+            df = pl.read_csv(path)
             logger.info(f"Dataset loaded with {df.shape[0]} rows and {df.shape[1]} columns")
             return df
         else:

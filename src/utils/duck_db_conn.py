@@ -1,7 +1,7 @@
 import duckdb
-import pandas as pd
+import polars as pl
 
-def run_duckdb_query(df: pd.DataFrame, sql: str) -> pd.DataFrame:
+def run_duckdb_query(df: pl.DataFrame, sql: str) -> pl.DataFrame:
     """Executes a DuckDB SQL query over a DataFrame and returns the result."""
     con = duckdb.connect(database=":memory:")
     try:
