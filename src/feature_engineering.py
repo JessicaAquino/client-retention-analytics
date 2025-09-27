@@ -43,65 +43,65 @@ def feature_engineering_pipeline(df: pl.DataFrame, config: dict) -> pl.DataFrame
     sql = "SELECT *"
 
     if "lag" in config:
-        for col in config["lag"]["columns"]:
-            for i in range(1, config["lag"]["n"] + 1):
-                sql += f", lag({col}, {i}) OVER (PARTITION BY numero_de_cliente ORDER BY foto_mes) AS {col}_lag_{i}"
+        sql += add_lag_sql(config["lag"])
 
     if "delta" in config:
-        for col in config["delta"]["columns"]:
-            for i in range(1, config["delta"]["n"] + 1):
-                sql += f", {col} - {col}_lag_{i} AS delta_{i}_{col}"
+        sql += add_delta_sql(config["delta"])
 
     if "minmax" in config:
-        for col in config["minmax"]["columns"]:
-            sql += f", MAX({col}) OVER (PARTITION BY numero_de_cliente) AS MAX_{col}, MIN({col}) OVER (PARTITION BY numero_de_cliente) AS MIN_{col}"
+        sql += add_minmax_sql(config["minmax"])
     
     if "ratio" in config:
-        for pair in config["ratio"]["pairs"]:
-            sql += f", IF({pair[1]} = 0, 0, {pair[0]} / {pair[1]}) AS ratio_{pair[0]}_{pair[1]}"
+        sql += add_ratio_sql(config["ratio"])
 
-    window_clause = ""
     if "linreg" in config:
-        window_size = config["linreg"].get("window", 3)
-        for col in config["linreg"]["columns"]:
-            sql += f", REGR_SLOPE({col}, cliente_antiguedad) OVER ventana_{window_size} AS slope_{col}"
-        window_clause = f" WINDOW ventana_{window_size} AS (PARTITION BY numero_de_cliente ORDER BY foto_mes ROWS BETWEEN {window_size} PRECEDING AND CURRENT ROW)"
+        linreg_str, window_clause = add_linreg_sql(config["linreg"])
+        sql += linreg_str
 
     sql += " FROM df"
-    if window_clause != "":
+    if window_clause:
         sql += window_clause
 
     df = run_duckdb_query(df, sql)
 
     return df
 
-@log.process_log
-def add_lag_features(df: pl.DataFrame, columns: list, n: int) -> pl.DataFrame:
-    """
-    Agrega features de lag según el listado y cantidad de lags indicados
-    
-    Parameters:
-    -----------
-    df: pl.DataFrame
-        DataFrame de entrada
-    columns: list
-        Listado de columnas para aplicarles lags
-    n: int
-        Cantidad de lags por columna
-    
-    Returns:
-    --------
-    pl.DataFrame
-        DataFrame con las nuevas features de lag agregadas
-    """
-    sql = "SELECT *"
+def add_lag_sql(config_lag: dict) -> str:    
+    lag_str = ""
+    for col in config_lag["columns"]:
+        for i in range(1, config_lag["n"] + 1):
+            lag_str += f", lag({col}, {i}) OVER (PARTITION BY numero_de_cliente ORDER BY foto_mes) AS {col}_lag_{i}"
 
-    for col in columns:
-        for i in range(1, n+1):
-            sql += f", lag({col}, {i}) OVER (PARTITION BY numero_de_cliente ORDER BY foto_mes) AS {col}_lag_{i}"
-    
-    sql += " FROM df"
-    
-    df = run_duckdb_query(df, sql)
+    return lag_str
 
-    return df
+def add_delta_sql(config_delta: dict) -> str:
+    delta_str = ""
+    for col in config_delta["columns"]:
+        for i in range(1, config_delta["n"] + 1):
+            delta_str += f", {col} - {col}_lag_{i} AS {col}_delta_{i}"
+
+    return delta_str
+
+def add_minmax_sql(config_minmax: dict) -> str:
+    min_max_sql = ""
+    for col in config_minmax["columns"]:
+        min_max_sql += f", MAX({col}) OVER (PARTITION BY numero_de_cliente) AS {col}_MAX, MIN({col}) OVER (PARTITION BY numero_de_cliente) AS {col}_MIN"
+
+    return min_max_sql
+
+def add_ratio_sql(config_ratio: dict) -> str:
+    ratio_sql = ""
+    for pair in config_ratio["pairs"]:
+        ratio_sql += f", IF({pair[1]} = 0, 0, {pair[0]} / {pair[1]}) AS ratio_{pair[0]}_{pair[1]}"
+
+    return ratio_sql
+
+def add_linreg_sql(config_linreg: dict) -> tuple:
+    linreg_sql = ""
+    window_size = config_linreg.get("window", 3)
+    for col in config_linreg["columns"]:
+        linreg_sql += f", REGR_SLOPE({col}, cliente_antiguedad) OVER ventana_{window_size} AS slope_{col}"
+    
+    window_clause = f" WINDOW ventana_{window_size} AS (PARTITION BY numero_de_cliente ORDER BY foto_mes ROWS BETWEEN {window_size} PRECEDING AND CURRENT ROW)"
+
+    return linreg_sql, window_clause
