@@ -42,6 +42,8 @@ def feature_engineering_pipeline(df: pl.DataFrame, config: dict) -> pl.DataFrame
 
     sql = "SELECT *"
 
+    window_clause = ""
+
     if "lag" in config:
         sql += add_lag_sql(config["lag"])
 
@@ -59,7 +61,7 @@ def feature_engineering_pipeline(df: pl.DataFrame, config: dict) -> pl.DataFrame
         sql += linreg_str
 
     sql += " FROM df"
-    if window_clause:
+    if window_clause != "":
         sql += window_clause
 
     df = run_duckdb_query(df, sql)

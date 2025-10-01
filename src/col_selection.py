@@ -30,7 +30,7 @@ def col_selection(df: pl.DataFrame) -> tuple[list[str], list[list[str]]]:
     lista_r = [c for c in df.columns if c not in (lista_t + lista_c + lista_m + list(col_drops))]
 
     # --- Features for lags, deltas, max/min, regression ---
-    cols_lag_delta_max_min_regl = lista_m + lista_c + lista_r + lista_r
+    cols_lag_delta_max_min_regl = lista_m + lista_c + lista_r
 
     # --- Ratios: match c-columns with m-columns (same suffix) ---
     cols_ratios = []

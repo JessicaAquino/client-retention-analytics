@@ -1,7 +1,8 @@
 import logging
 
-import src.feature_engineering as fe
 import src.col_selection as cs
+import src.feature_engineering as fe
+import src.preprocessing as pp
 from src.config.logger import setup_logging
 from src.loader import load_data
 from src.config.conf import load_config
@@ -12,39 +13,58 @@ def main():
     logger.info("STARTING this wonderful pipeline!")
 
     # region Config_vars
-    cfg = load_config("competencia01")
+    cfg = load_config("challenge01")
 
-    data_path = cfg.get('DATA_PATH', None)
+    data_path = cfg.get('PATH_INPUT_DATA', None)
+    month_train = cfg.get('MONTH_TRAIN', None)
+    month_validation = cfg.get('MONTH_VALIDATION', None)
+    month_test = cfg.get('MONTH_TEST', None)
+    
+    lgbm_opt_path = cfg.get('PATH_OUTPUT_LGBM_OPTIMIZATION', None)
+    lgbm_model_path = cfg.get('PATH_OUTPUT_LGBM_MODEL', None)
+    
+    gain_amount = cfg.get('GAIN')
+    cost_amount = cfg.get('COST')
+
     # endregion 
 
     # 0. Load data
     df = load_data(data_path, "csv")
 
-    cols = cs.col_selection(df)
+    # 1. Columns selection
+    cols_lag_delta_max_min_regl, cols_ratios = cs.col_selection(df)
 
-    # 1. Feature Engineering
+    # 2. Feature Engineering
     df = fe.feature_engineering_pipeline(df, {
         "lag": {
-            "columns": cols[0],
-            "n": 2   # number of lags
+            "columns": cols_lag_delta_max_min_regl,
+            "n": 2
         },
         "delta": {
-            "columns": cols[0],
-            "n": 2   # number of deltas
+            "columns": cols_lag_delta_max_min_regl,
+            "n": 2
         },
-        "minmax": {
-            "columns": cols[0]
-        },
+        # "minmax": {
+        #     "columns": cols_lag_delta_max_min_regl
+        # },
         "ratio": {
-            "pairs": cols[1]
+            "pairs": cols_ratios
         },
-        "linreg": {
-            "columns": cols[0],
-            "window": 3  # optional, for flexibility
-        }
+        # "linreg": {
+        #     "columns": cols_lag_delta_max_min_regl,
+        #     "window": 3
+        # }
     })
 
-    # df = fe.add_lag_features(df, cols[0], n=2)
+    # 3. Preprocessing
+    X_train, y_train_binary, w_train, X_test, y_test_binary, y_test_class, w_test = pp.preprocessing_pipeline(
+        df,
+        ["BAJA+2", "BAJA+1"],
+        month_train,
+        month_validation
+    )
+
+    print(X_train)
 
     logger.info("Pipeline ENDED!")
 

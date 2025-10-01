@@ -6,6 +6,6 @@ def run_duckdb_query(df: pl.DataFrame, sql: str) -> pl.DataFrame:
     con = duckdb.connect(database=":memory:")
     try:
         con.register("df", df)
-        return con.execute(sql).df()
+        return con.execute(sql).pl()
     finally:
         con.close()
