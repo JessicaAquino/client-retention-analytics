@@ -1,6 +1,7 @@
 import polars as pl
+import pandas as pd
 import numpy as np
-import src.utils.logger_wrapper as log
+import src.infra.logger_wrapper as log
 
 @log.process_log
 def preprocessing_pipeline(
@@ -9,10 +10,10 @@ def preprocessing_pipeline(
     month_train: list[int],
     month_test: int
 ) -> tuple[
-    pl.DataFrame,        # X_train
+    pd.DataFrame,        # X_train
     np.ndarray,          # y_train_binary
     np.ndarray,          # w_train
-    pl.DataFrame,        # X_test
+    pd.DataFrame,        # X_test
     np.ndarray,          # y_test_binary
     np.ndarray,          # y_test_class
     np.ndarray           # w_test
@@ -20,7 +21,7 @@ def preprocessing_pipeline(
     df = add_weight_class(df)
     df = add_binary_class(df, positives)
     X_train, y_train_binary, w_train, X_test, y_test_binary, y_test_class, w_test = split_test_train(df, month_train, month_test)
-    return X_train, y_train_binary, w_train, X_test, y_test_binary, y_test_class, w_test
+    return X_train.to_pandas(), y_train_binary, w_train, X_test.to_pandas(), y_test_binary, y_test_class, w_test
 
 
 @log.process_log

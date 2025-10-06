@@ -1,7 +1,7 @@
 import polars as pl
-import src.utils.logger_wrapper as log
+import src.infra.logger_wrapper as log
 
-from src.utils.duck_db_conn import run_duckdb_query
+from src.infra.duckdb_runner import run_duckdb_query
 
 @log.process_log
 def feature_engineering_pipeline(df: pl.DataFrame, config: dict) -> pl.DataFrame:
