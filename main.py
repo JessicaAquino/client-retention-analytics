@@ -11,6 +11,7 @@ import src.ml.lgbm_train_test as tt
 
 import optuna
 import json
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -71,13 +72,13 @@ def main():
     # 3. Preprocessing
     X_train, y_train_binary, w_train, X_test, y_test_binary, y_test_class, w_test = pp.preprocessing_pipeline(
         df,
-        ["BAJA+2", "BAJA+1"],
+        ["BAJA+2"],
         MONTH_TRAIN,
         MONTH_VALIDATION
     )
 
     # 4. Hyperparameters optimization
-    name_lgbm="_20251003"
+    name_lgbm="_20251006"
 
     opt_cfg = lo.OptimizationConfig(
         n_trials=LGBM_N_TRIALS,
@@ -91,12 +92,8 @@ def main():
         seeds=SEEDS,
         output_path=LGBM_OPT_PATH
     )
-
-    X_train_pd = X_train.to_pandas()
-
-    # study = lo.opt_hyperparam_binary(X_train_pd, y_train_binary, w_train, opt_cfg)
-
-    study = lo.run_lgbm_optimization(X_train_pd, y_train_binary, w_train, opt_cfg)
+ 
+    study = lo.run_lgbm_optimization(X_train, y_train_binary, w_train, opt_cfg)
 
     # 5. Entrenamiento lgbm con la mejor iteración y mejores hiperparámetros
 
@@ -113,12 +110,8 @@ def main():
         seeds=SEEDS
 
     )
-
-
     model_lgbm = tt.entrenamiento_lgbm(X_train , y_train_binary, w_train ,best_iter,best_params , tt_cfg)
     y_pred=tt.evaluacion_lgbm(X_test , y_test_binary ,model_lgbm)
-
-
 
 
     logger.info("Pipeline ENDED!")
@@ -160,13 +153,13 @@ def kaggle_prediction():
 
     X_train, y_train_binary, w_train, X_test, y_test_binary, y_test_class, w_test = pp.preprocessing_pipeline(
         df,
-        ["BAJA+2", "BAJA+1"],
+        ["BAJA+2"],
         MONTH_TRAIN,
         MONTH_TEST
     )
 
     # 4. Best hyperparams loading
-    name_lgbm="_20251003"
+    name_lgbm="_20251006"
     name_best_params_file=f"best_params_binary{name_lgbm}.json"
     storage_name = "sqlite:///" + LGBM_OPT_PATH + "db/" + "optimization_lgbm.db" # Refactor
     study = optuna.load_study(study_name='study_lgbm_binary'+name_lgbm,storage=storage_name)
@@ -203,8 +196,19 @@ def kaggle_prediction():
 
     logger.info("Pipeline ENDED!")
 
+def compare():
+    pred1 = pd.read_csv("output/prediction/prediccion_patito.csv", sep=',')
+    pred2 = pd.read_csv("output/prediction/prediccion_20251003.csv", sep=',')
+
+    merged = pred1.merge(pred2, on="numero_de_cliente", suffixes=("", "_patito"))
+    diffs = merged[merged["Predicted"] != merged["Predicted_patito"]]
+
+    print(f"Differences found: {len(diffs)}")
+    if len(diffs) > 0:
+        diffs.to_csv("output/diffs.csv", index=False)
 
 if __name__ == "__main__":
     lc.setup_logging()
-    # main()
+    main()
     kaggle_prediction()
+    # compare()
