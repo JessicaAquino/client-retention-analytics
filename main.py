@@ -16,9 +16,13 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 # region Config_vars
+
+execution_name = "_20251006_2"
+
 cfg = cf.load_config("challenge01")
 
 DATA_PATH = cfg.get('PATH_INPUT_DATA', None)
+
 MONTH_TRAIN = cfg.get('MONTH_TRAIN', None)
 MONTH_VALIDATION = cfg.get('MONTH_VALIDATION', None)
 MONTH_TEST = cfg.get('MONTH_TEST', None)
@@ -34,6 +38,8 @@ SEEDS = cfg.get('SEEDS', None)
 LGBM_N_FOLDS = cfg.get('LGBM_N_FOLDS', None)
 LGBM_N_BOOSTS = cfg.get('LGBM_N_BOOSTS', None)
 LGBM_N_TRIALS = cfg.get('LGBM_N_TRIALS', None)
+
+BINARY_POSITIVES = cfg.get('BINARY_POSITIVES', None)
 
 # endregion 
 
@@ -63,22 +69,22 @@ def main():
         "ratio": {
             "pairs": cols_ratios
         },
-        # "linreg": {
-        #     "columns": cols_lag_delta_max_min_regl,
-        #     "window": 3
-        # }
+        "linreg": {
+            "columns": cols_lag_delta_max_min_regl,
+            "window": 3
+        }
     })
 
     # 3. Preprocessing
     X_train, y_train_binary, w_train, X_test, y_test_binary, y_test_class, w_test = pp.preprocessing_pipeline(
         df,
-        ["BAJA+2"],
+        BINARY_POSITIVES,
         MONTH_TRAIN,
         MONTH_VALIDATION
     )
 
     # 4. Hyperparameters optimization
-    name_lgbm="_20251006"
+    name_lgbm=execution_name
 
     opt_cfg = lo.OptimizationConfig(
         n_trials=LGBM_N_TRIALS,
@@ -142,10 +148,10 @@ def kaggle_prediction():
         "ratio": {
             "pairs": cols_ratios
         },
-        # "linreg": {
-        #     "columns": cols_lag_delta_max_min_regl,
-        #     "window": 3
-        # }
+        "linreg": {
+            "columns": cols_lag_delta_max_min_regl,
+            "window": 3
+        }
     })
 
     # 3. Preprocessing
@@ -153,13 +159,13 @@ def kaggle_prediction():
 
     X_train, y_train_binary, w_train, X_test, y_test_binary, y_test_class, w_test = pp.preprocessing_pipeline(
         df,
-        ["BAJA+2"],
+        BINARY_POSITIVES,
         MONTH_TRAIN,
         MONTH_TEST
     )
 
     # 4. Best hyperparams loading
-    name_lgbm="_20251006"
+    name_lgbm=execution_name
     name_best_params_file=f"best_params_binary{name_lgbm}.json"
     storage_name = "sqlite:///" + LGBM_OPT_PATH + "db/" + "optimization_lgbm.db" # Refactor
     study = optuna.load_study(study_name='study_lgbm_binary'+name_lgbm,storage=storage_name)
