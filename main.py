@@ -231,7 +231,7 @@ def compare():
 if __name__ == "__main__":
     lu.ensure_dirs(
         PATH_LOGS,
-        PATH_DATA,
+        # PATH_DATA,
         PATH_LGBM_OPT,
         PATH_LGBM_OPT_BEST_PARAMS,
         PATH_LGBM_OPT_DB,
