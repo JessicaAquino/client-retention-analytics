@@ -3,9 +3,6 @@ import os
 import datetime
 
 def setup_logging(log_dir: str = "logs") -> None:
-    """Configure logging (only once)."""
-    os.makedirs(log_dir, exist_ok=True)
-
     date_now = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     log_file = os.path.join(log_dir, f"log_{date_now}.log")
 

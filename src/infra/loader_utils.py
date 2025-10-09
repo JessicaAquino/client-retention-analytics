@@ -1,7 +1,13 @@
 import polars as pl
 import logging
+import os
 
 logger = logging.getLogger(__name__)
+
+def ensure_dirs(*paths: str):
+    """Create directories if they don't exist."""
+    for path in paths:
+        os.makedirs(path, exist_ok=True)
 
 def load_data(path: str, format: str = "csv") -> pl.DataFrame | None:
     """

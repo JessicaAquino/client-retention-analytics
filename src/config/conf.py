@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 ROOT_DIR = Path(__file__).resolve().parents[2]
 CONFIG_FILE = ROOT_DIR / "conf.yaml"
 
-def load_config(section = "competencia01") -> dict:
+def load_config(section = "CHALLENGE_01") -> dict:
     section_config = {}
     try:
         with open(CONFIG_FILE, 'r') as file:

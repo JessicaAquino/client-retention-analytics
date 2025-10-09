@@ -1,7 +1,7 @@
 import logging
 
 import src.config.conf as cf
-import src.infra.loader as ld
+import infra.loader_utils as lu
 import src.core.col_selection as cs
 import src.core.feature_engineering as fe
 import src.core.preprocessing as pp
@@ -17,29 +17,45 @@ logger = logging.getLogger(__name__)
 
 # region Config_vars
 
-execution_name = "_20251006_2"
+cfg = cf.load_config("CHALLENGE_01")
+paths = cfg.get('PATHS', None)
 
-cfg = cf.load_config("challenge01")
+# Experiment values
+STUDY_NAME = cfg.get('STUDY_NAME', None)
 
-DATA_PATH = cfg.get('PATH_INPUT_DATA', None)
+SEEDS = cfg.get('SEEDS', None)
 
 MONTH_TRAIN = cfg.get('MONTH_TRAIN', None)
 MONTH_VALIDATION = cfg.get('MONTH_VALIDATION', None)
 MONTH_TEST = cfg.get('MONTH_TEST', None)
 
-LGBM_OPT_PATH = cfg.get('PATH_OUTPUT_LGBM_OPTIMIZATION', None)
-LGBM_MODEL_PATH = cfg.get('PATH_OUTPUT_LGBM_MODEL', None)
-
 GAIN_AMOUNT = cfg.get('GAIN')
 COST_AMOUNT = cfg.get('COST')
 
-SEEDS = cfg.get('SEEDS', None)
-
-LGBM_N_FOLDS = cfg.get('LGBM_N_FOLDS', None)
-LGBM_N_BOOSTS = cfg.get('LGBM_N_BOOSTS', None)
-LGBM_N_TRIALS = cfg.get('LGBM_N_TRIALS', None)
 
 BINARY_POSITIVES = cfg.get('BINARY_POSITIVES', None)
+
+LGBM_N_TRIALS = cfg.get('LGBM_N_TRIALS', None)
+LGBM_N_FOLDS = cfg.get('LGBM_N_FOLDS', None)
+LGBM_N_BOOSTS = cfg.get('LGBM_N_BOOSTS', None)
+LGBM_THRESHOLD = cfg.get('LGBM_THRESHOLD', None)
+
+# Paths
+
+## Logs
+PATH_LOGS = paths.get('LOGS', None)
+
+## Input
+PATH_DATA = paths.get('PATH_INPUT_DATA', None)
+
+## Output
+PATH_LGBM_OPT = paths.get('PATH_OUTPUT_LGBM_OPTIMIZATION', None)
+PATH_LGBM_OPT_BEST_PARAMS = paths.get('PATH_OUTPUT_LGBM_OPTIMIZATION_BEST_PARAMS', None)
+PATH_LGBM_OPT_DB = paths.get('PATH_OUTPUT_LGBM_OPTIMIZATION_DB', None)
+
+PATH_LGBM_MODEL = paths.get('PATH_OUTPUT_LGBM_MODEL', None)
+
+PATH_PREDICTION = paths.get('PATH_OUTPUT_PREDICTION')
 
 # endregion 
 
@@ -48,7 +64,7 @@ def main():
     logger.info("STARTING this wonderful pipeline!")
 
     # 0. Load data
-    df = ld.load_data(DATA_PATH, "csv")
+    df = lu.load_data(f"{PATH_DATA}competencia_01.csv", "csv")
 
     # 1. Columns selection
     cols_lag_delta_max_min_regl, cols_ratios = cs.col_selection(df)
@@ -69,10 +85,10 @@ def main():
         "ratio": {
             "pairs": cols_ratios
         },
-        "linreg": {
-            "columns": cols_lag_delta_max_min_regl,
-            "window": 3
-        }
+        # "linreg": {
+        #     "columns": cols_lag_delta_max_min_regl,
+        #     "window": 3
+        # }
     })
 
     # 3. Preprocessing
@@ -84,11 +100,10 @@ def main():
     )
 
     # 4. Hyperparameters optimization
-    name_lgbm=execution_name
 
     opt_cfg = lo.OptimizationConfig(
         n_trials=LGBM_N_TRIALS,
-        name=name_lgbm,
+        name=STUDY_NAME,
 
         gain_amount=GAIN_AMOUNT,
         cost_amount=COST_AMOUNT,
@@ -96,7 +111,7 @@ def main():
         n_folds=LGBM_N_FOLDS,
         n_boosts=LGBM_N_BOOSTS,
         seeds=SEEDS,
-        output_path=LGBM_OPT_PATH
+        output_path=PATH_LGBM_OPT
     )
  
     study = lo.run_lgbm_optimization(X_train, y_train_binary, w_train, opt_cfg)
@@ -110,9 +125,9 @@ def main():
         gain_amount=GAIN_AMOUNT,
         cost_amount=COST_AMOUNT,
 
-        name=name_lgbm,
+        name=STUDY_NAME,
 
-        output_path=LGBM_MODEL_PATH,
+        output_path=PATH_LGBM_MODEL,
         seeds=SEEDS
 
     )
@@ -127,7 +142,7 @@ def kaggle_prediction():
     logger.info("STARTING this wonderful pipeline!")
 
     # 0. Load data
-    df = ld.load_data(DATA_PATH, "csv")
+    df = lu.load_data(f"{PATH_DATA}competencia_01.csv", "csv")
 
     # 1. Columns selection
     cols_lag_delta_max_min_regl, cols_ratios = cs.col_selection(df)
@@ -148,10 +163,10 @@ def kaggle_prediction():
         "ratio": {
             "pairs": cols_ratios
         },
-        "linreg": {
-            "columns": cols_lag_delta_max_min_regl,
-            "window": 3
-        }
+        # "linreg": {
+        #     "columns": cols_lag_delta_max_min_regl,
+        #     "window": 3
+        # }
     })
 
     # 3. Preprocessing
@@ -165,15 +180,14 @@ def kaggle_prediction():
     )
 
     # 4. Best hyperparams loading
-    name_lgbm=execution_name
-    name_best_params_file=f"best_params_binary{name_lgbm}.json"
-    storage_name = "sqlite:///" + LGBM_OPT_PATH + "db/" + "optimization_lgbm.db" # Refactor
-    study = optuna.load_study(study_name='study_lgbm_binary'+name_lgbm,storage=storage_name)
+    name_best_params_file = f"best_params_binary{STUDY_NAME}.json"
+    storage_name = "sqlite:///" + PATH_LGBM_OPT_DB + "optimization_lgbm.db"
+    study = optuna.load_study(study_name='study_lgbm_binary'+STUDY_NAME, storage=storage_name)
     
     # 5. Training with best attempt and hyperparams
     best_iter = study.best_trial.user_attrs["best_iter"]
     
-    with open(LGBM_OPT_PATH + "best_params/"+name_best_params_file, "r") as f:
+    with open(PATH_LGBM_OPT_BEST_PARAMS + name_best_params_file, "r") as f:
         best_params = json.load(f)
     logger.info(f"Hyperparams OK?: {study.best_trial.params == best_params}")
     
@@ -181,11 +195,10 @@ def kaggle_prediction():
         gain_amount=GAIN_AMOUNT,
         cost_amount=COST_AMOUNT,
 
-        name=name_lgbm,
+        name=STUDY_NAME,
 
-        output_path=LGBM_MODEL_PATH,
+        output_path=PATH_LGBM_MODEL,
         seeds=SEEDS
-
     )
     
     model_lgbm = tt.entrenamiento_lgbm(X_train, y_train_binary, w_train ,best_iter,best_params , tt_cfg)
@@ -198,7 +211,7 @@ def kaggle_prediction():
     y_test_binary["Predicted"]=y_test_binary["Predicted"].apply(lambda x : 1 if x >=0.025 else 0)
     logger.info(f"cantidad de bajas predichas : {(y_test_binary==1).sum()}")
     y_test_binary=y_test_binary.set_index("numero_de_cliente")
-    y_test_binary.to_csv(f"output/prediction/prediccion{name_lgbm}.csv")
+    y_test_binary.to_csv(f"output/prediction/prediccion{STUDY_NAME}.csv")
 
     logger.info("Pipeline ENDED!")
 
@@ -213,8 +226,18 @@ def compare():
     if len(diffs) > 0:
         diffs.to_csv("output/diffs.csv", index=False)
 
-if __name__ == "__main__":
-    lc.setup_logging()
+if __name__ == "__main__":    
+    lu.ensure_dirs(
+        PATH_LOGS,
+        PATH_DATA,
+        PATH_LGBM_OPT,
+        PATH_LGBM_OPT_BEST_PARAMS,
+        PATH_LGBM_OPT_DB,
+        PATH_LGBM_MODEL,
+        PATH_PREDICTION
+    )
+    lc.setup_logging(PATH_LOGS)
+
     main()
     kaggle_prediction()
     # compare()
