@@ -1,7 +1,6 @@
-from src.config.optimization_config import OptimizationConfig
+from src.ml.optimization_config import OptimizationConfig
 import numpy as np
 import lightgbm as lgb
-
 
 class LightGBMObjective:
     def __init__(self, X_train, y_train, w_train, cfg: OptimizationConfig):

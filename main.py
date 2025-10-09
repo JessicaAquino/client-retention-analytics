@@ -1,13 +1,15 @@
 import logging
 
 import src.config.conf as cf
-import infra.loader_utils as lu
+import src.infra.loader_utils as lu
 import src.core.col_selection as cs
 import src.core.feature_engineering as fe
 import src.core.preprocessing as pp
 import src.config.logger_config as lc
 import src.ml.lgbm_optimization as lo
 import src.ml.lgbm_train_test as tt
+
+from src.ml.optimization_config import OptimizationConfig
 
 import optuna
 import json
@@ -46,16 +48,16 @@ LGBM_THRESHOLD = cfg.get('LGBM_THRESHOLD', None)
 PATH_LOGS = paths.get('LOGS', None)
 
 ## Input
-PATH_DATA = paths.get('PATH_INPUT_DATA', None)
+PATH_DATA = paths.get('INPUT_DATA', None)
 
 ## Output
-PATH_LGBM_OPT = paths.get('PATH_OUTPUT_LGBM_OPTIMIZATION', None)
-PATH_LGBM_OPT_BEST_PARAMS = paths.get('PATH_OUTPUT_LGBM_OPTIMIZATION_BEST_PARAMS', None)
-PATH_LGBM_OPT_DB = paths.get('PATH_OUTPUT_LGBM_OPTIMIZATION_DB', None)
+PATH_LGBM_OPT = paths.get('OUTPUT_LGBM_OPTIMIZATION', None)
+PATH_LGBM_OPT_BEST_PARAMS = paths.get('OUTPUT_LGBM_OPTIMIZATION_BEST_PARAMS', None)
+PATH_LGBM_OPT_DB = paths.get('OUTPUT_LGBM_OPTIMIZATION_DB', None)
 
-PATH_LGBM_MODEL = paths.get('PATH_OUTPUT_LGBM_MODEL', None)
+PATH_LGBM_MODEL = paths.get('OUTPUT_LGBM_MODEL', None)
 
-PATH_PREDICTION = paths.get('PATH_OUTPUT_PREDICTION')
+PATH_PREDICTION = paths.get('OUTPUT_PREDICTION')
 
 # endregion 
 
@@ -101,7 +103,7 @@ def main():
 
     # 4. Hyperparameters optimization
 
-    opt_cfg = lo.OptimizationConfig(
+    opt_cfg = OptimizationConfig(
         n_trials=LGBM_N_TRIALS,
         name=STUDY_NAME,
 
@@ -226,7 +228,7 @@ def compare():
     if len(diffs) > 0:
         diffs.to_csv("output/diffs.csv", index=False)
 
-if __name__ == "__main__":    
+if __name__ == "__main__":
     lu.ensure_dirs(
         PATH_LOGS,
         PATH_DATA,

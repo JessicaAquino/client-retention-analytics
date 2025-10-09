@@ -1,4 +1,4 @@
-from src.config.optimization_config import OptimizationConfig
+from src.ml.optimization_config import OptimizationConfig
 
 import optuna
 from optuna.study import Study
