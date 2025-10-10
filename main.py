@@ -87,10 +87,10 @@ def main():
         "ratio": {
             "pairs": cols_ratios
         },
-        # "linreg": {
-        #     "columns": cols_lag_delta_max_min_regl,
-        #     "window": 3
-        # }
+        "linreg": {
+            "columns": cols_lag_delta_max_min_regl,
+            "window": 3
+        }
     })
 
     # 3. Preprocessing
@@ -165,10 +165,10 @@ def kaggle_prediction():
         "ratio": {
             "pairs": cols_ratios
         },
-        # "linreg": {
-        #     "columns": cols_lag_delta_max_min_regl,
-        #     "window": 3
-        # }
+        "linreg": {
+            "columns": cols_lag_delta_max_min_regl,
+            "window": 3
+        }
     })
 
     # 3. Preprocessing
