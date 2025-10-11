@@ -142,6 +142,10 @@ def main():
     logger.info("Pipeline ENDED!")
 
 def kaggle_prediction():
+    STUDY_NAME = "_20251003"
+    NEW_STUDY = "_20251011_01"
+    TOP_N = 16368
+
     logger.info("STARTING this wonderful pipeline!")
 
     # 0. Load data
@@ -166,10 +170,10 @@ def kaggle_prediction():
         "ratio": {
             "pairs": cols_ratios
         },
-        "linreg": {
-            "columns": cols_lag_delta_max_min_regl,
-            "window": 3
-        }
+        # "linreg": {
+        #     "columns": cols_lag_delta_max_min_regl,
+        #     "window": 3
+        # }
     })
 
     # 3. Preprocessing
@@ -184,7 +188,7 @@ def kaggle_prediction():
 
     # 4. Best hyperparams loading
     name_best_params_file = f"best_params_binary{STUDY_NAME}.json"
-    storage_name = "sqlite:///" + PATH_LGBM_OPT_DB + "optimization_lgbm.db"
+    storage_name = "sqlite:///" + PATH_LGBM_OPT_DB + "optimization_lgbm_best.db"
     study = optuna.load_study(study_name='study_lgbm_binary'+STUDY_NAME, storage=storage_name)
     
     # 5. Training with best attempt and hyperparams
@@ -208,19 +212,39 @@ def kaggle_prediction():
 
     # 6. Prediction!
 
-    y_test_binary=X_test[["numero_de_cliente"]]
-    y_pred=model_lgbm.predict(X_test)
-    y_test_binary["Predicted"] = y_pred
-    y_test_binary["Predicted"]=y_test_binary["Predicted"].apply(lambda x : 1 if x >=0.025 else 0)
-    logger.info(f"cantidad de bajas predichas : {(y_test_binary==1).sum()}")
-    y_test_binary=y_test_binary.set_index("numero_de_cliente")
-    y_test_binary.to_csv(f"output/prediction/prediccion{STUDY_NAME}.csv")
+    # y_test_binary=X_test[["numero_de_cliente"]]
+    # y_pred=model_lgbm.predict(X_test)
+    # y_test_binary["Predicted"] = y_pred
+    # y_test_binary["Predicted"]=y_test_binary["Predicted"].apply(lambda x : 1 if x >=0.025 else 0)
+    # logger.info(f"cantidad de bajas predichas : {(y_test_binary==1).sum()}")
+    # y_test_binary=y_test_binary.set_index("numero_de_cliente")
+    # y_test_binary.to_csv(f"output/prediction/prediccion{NEW_STUDY}.csv")
+
+    # Number of clients you want to mark as positive
+
+    # Keep predictions
+    y_test_binary = X_test[["numero_de_cliente"]].copy()
+    y_test_binary["PredictedProb"] = model_lgbm.predict(X_test)
+
+    # Sort descending by predicted probability
+    y_test_binary = y_test_binary.sort_values("PredictedProb", ascending=False)
+
+    # Assign 1 to top N, 0 to the rest
+    y_test_binary["Predicted"] = 0
+    y_test_binary.iloc[:TOP_N, y_test_binary.columns.get_loc("Predicted")] = 1
+
+    # Logging & save
+    logger.info(f"cantidad de bajas predichas (top {TOP_N}): {y_test_binary['Predicted'].sum()}")
+
+    y_test_binary = y_test_binary.set_index("numero_de_cliente")[["Predicted"]]
+    y_test_binary.to_csv(f"output/prediction/prediccion{NEW_STUDY}.csv")
+
 
     logger.info("Pipeline ENDED!")
 
 def evaluate_threshold():
     # Best model
-    STUDY_NAME = "_20251009_01"
+    STUDY_NAME = "_20251010_01"
 
     logger.info("STARTING this wonderful pipeline!")
 
@@ -262,7 +286,7 @@ def evaluate_threshold():
 
     # 4. Best hyperparams loading
     name_best_params_file = f"best_params_binary{STUDY_NAME}.json"
-    storage_name = "sqlite:///" + PATH_LGBM_OPT_DB + "optimization_lgbm_best.db"
+    storage_name = "sqlite:///" + PATH_LGBM_OPT_DB + "optimization_lgbm_vm.db"
     study = optuna.load_study(study_name='study_lgbm_binary'+STUDY_NAME, storage=storage_name)
     
     # 5. Training with best attempt and hyperparams
@@ -355,7 +379,7 @@ if __name__ == "__main__":
     )
     lc.setup_logging(PATH_LOGS)
 
-    main()
+    # main()
     kaggle_prediction()
     # compare()
     # evaluate_threshold()
