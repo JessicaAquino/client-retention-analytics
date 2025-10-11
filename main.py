@@ -144,8 +144,8 @@ def main():
 def kaggle_prediction():
     STUDY_NAME = "_20251010_01"
     
-    NEW_STUDY = "_20251011_05"
-    TOP_N = 13000
+    NEW_STUDY = "_20251011_06"
+    TOP_N = 14000
 
     logger.info("STARTING this wonderful pipeline!")
 
