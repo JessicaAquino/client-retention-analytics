@@ -142,9 +142,10 @@ def main():
     logger.info("Pipeline ENDED!")
 
 def kaggle_prediction():
-    STUDY_NAME = "_20251003"
-    NEW_STUDY = "_20251011_01"
-    TOP_N = 16368
+    STUDY_NAME = "_20251009_01"
+    
+    NEW_STUDY = "_20251011_02"
+    TOP_N = 12200
 
     logger.info("STARTING this wonderful pipeline!")
 
@@ -188,7 +189,7 @@ def kaggle_prediction():
 
     # 4. Best hyperparams loading
     name_best_params_file = f"best_params_binary{STUDY_NAME}.json"
-    storage_name = "sqlite:///" + PATH_LGBM_OPT_DB + "optimization_lgbm_best.db"
+    storage_name = "sqlite:///" + PATH_LGBM_OPT_DB + "optimization_lgbm_vm.db"
     study = optuna.load_study(study_name='study_lgbm_binary'+STUDY_NAME, storage=storage_name)
     
     # 5. Training with best attempt and hyperparams
