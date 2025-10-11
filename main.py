@@ -14,6 +14,7 @@ from src.ml.optimization_config import OptimizationConfig
 import optuna
 import json
 import pandas as pd
+import polars as pl
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -144,8 +145,8 @@ def main():
 def kaggle_prediction():
     STUDY_NAME = "_20251010_01"
     
-    NEW_STUDY = "_20251011_07"
-    TOP_N = 15000
+    NEW_STUDY = "_20251011_08"
+    TOP_N = 13500
 
     logger.info("STARTING this wonderful pipeline!")
 
@@ -360,6 +361,30 @@ def evaluate_threshold():
 
     logger.info("Pipeline ENDED!")
 
+def get_top_n_predictions(csv_path: str, n: int) -> pl.DataFrame:
+    """
+    Reads a CSV with columns ['numero_de_cliente', 'PredictedProb', 'Predicted']
+    and returns the top N rows based on PredictedProb.
+    The output contains only ['numero_de_cliente', 'Predicted'].
+    """
+
+    # 1. Read CSV
+    df = pl.read_csv(csv_path)
+
+    # 2. Sort descending by PredictedProb
+    df = df.sort("PredictedProb", descending=True)
+
+    # 3. Assign 1 to top N, 0 to rest
+    df = df.with_columns(
+        pl.when(pl.arange(0, df.height) < n)
+        .then(1)
+        .otherwise(0)
+        .alias("Predicted")
+    )
+
+    # 4. Keep only the two columns
+    return df.select(["numero_de_cliente", "Predicted"])
+
 def compare():
     pred1 = pd.read_csv("output/prediction/prediccion_patito.csv", sep=',')
     pred2 = pd.read_csv("output/prediction/prediccion_20251003.csv", sep=',')
@@ -384,6 +409,8 @@ if __name__ == "__main__":
     lc.setup_logging(PATH_LOGS)
 
     # main()
-    kaggle_prediction()
+    # kaggle_prediction()
     # compare()
     # evaluate_threshold()
+    top_clients = get_top_n_predictions("output/prediction/prediccion_20251010_01_prob.csv", n=13100)
+    top_clients.write_csv("output/prediction/prediccion_20251011_08.csv")
