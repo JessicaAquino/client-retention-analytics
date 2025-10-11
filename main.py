@@ -14,6 +14,8 @@ from src.ml.optimization_config import OptimizationConfig
 import optuna
 import json
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
 logger = logging.getLogger(__name__)
 
@@ -139,7 +141,6 @@ def main():
 
     logger.info("Pipeline ENDED!")
 
-
 def kaggle_prediction():
     logger.info("STARTING this wonderful pipeline!")
 
@@ -217,6 +218,120 @@ def kaggle_prediction():
 
     logger.info("Pipeline ENDED!")
 
+def evaluate_threshold():
+    # Best model
+    STUDY_NAME = "_20251009_01"
+
+    logger.info("STARTING this wonderful pipeline!")
+
+    # 0. Load data
+    df = lu.load_data(f"{PATH_DATA}competencia_01.csv", "csv")
+
+    # 1. Columns selection
+    cols_lag_delta_max_min_regl, cols_ratios = cs.col_selection(df)
+
+    # 2. Feature Engineering
+    df = fe.feature_engineering_pipeline(df, {
+        "lag": {
+            "columns": cols_lag_delta_max_min_regl,
+            "n": 2
+        },
+        "delta": {
+            "columns": cols_lag_delta_max_min_regl,
+            "n": 2
+        },
+        # "minmax": {
+        #     "columns": cols_lag_delta_max_min_regl
+        # },
+        "ratio": {
+            "pairs": cols_ratios
+        },
+        # "linreg": {
+        #     "columns": cols_lag_delta_max_min_regl,
+        #     "window": 3
+        # }
+    })
+
+    # 3. Preprocessing
+    X_train, y_train_binary, w_train, X_test, y_test_binary, y_test_class, w_test = pp.preprocessing_pipeline(
+        df,
+        BINARY_POSITIVES,
+        MONTH_TRAIN,
+        MONTH_VALIDATION
+    )
+
+    # 4. Best hyperparams loading
+    name_best_params_file = f"best_params_binary{STUDY_NAME}.json"
+    storage_name = "sqlite:///" + PATH_LGBM_OPT_DB + "optimization_lgbm_best.db"
+    study = optuna.load_study(study_name='study_lgbm_binary'+STUDY_NAME, storage=storage_name)
+    
+    # 5. Training with best attempt and hyperparams
+    best_iter = study.best_trial.user_attrs["best_iter"]
+    
+    with open(PATH_LGBM_OPT_BEST_PARAMS + name_best_params_file, "r") as f:
+        best_params = json.load(f)
+    logger.info(f"Hyperparams OK?: {study.best_trial.params == best_params}")
+    
+    tt_cfg = tt.TrainTestConfig(
+        gain_amount=GAIN_AMOUNT,
+        cost_amount=COST_AMOUNT,
+
+        name=STUDY_NAME,
+
+        output_path=PATH_LGBM_MODEL,
+        seeds=SEEDS
+    )
+    
+    model_lgbm = tt.entrenamiento_lgbm(X_train, y_train_binary, w_train ,best_iter,best_params , tt_cfg)
+
+    # 6. Prediction
+
+    y_pred = model_lgbm.predict(X_test)
+
+    # 7. Ganancia
+
+    ganancia = np.where(y_test_binary == 1, 780000, 0) - np.where(y_test_binary == 0, 20000, 0)
+
+    idx = np.argsort(y_pred)[::-1]
+
+    ganancia = ganancia[idx]
+    y_pred = y_pred[idx]
+
+    ganancia_cum = np.cumsum(ganancia)
+
+    piso_envios = 4000
+    techo_envios = 20000
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(y_pred[piso_envios:techo_envios], ganancia_cum[piso_envios:techo_envios], label='Ganancia LGBM')
+    plt.title('Curva de Ganancia')
+    plt.xlabel('Predicción de probabilidad')
+    plt.ylabel('Ganancia')
+    plt.axvline(x=0.025, color='g', linestyle='--', label='Punto de corte a 0.025')
+    plt.legend()
+
+    plt.savefig(f"output/graphics/ganancia_prob{STUDY_NAME}.png", bbox_inches='tight')
+
+    # Buscando mejor ganancia
+
+    piso_envios = 4000
+    techo_envios = 20000
+
+    ganancia_max = ganancia_cum.max()
+    gan_max_idx = np.where(ganancia_cum == ganancia_max)[0][0]
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(piso_envios, len(ganancia_cum[piso_envios:techo_envios]) + piso_envios), ganancia_cum[piso_envios:techo_envios], label='Ganancia LGBM')
+    plt.axvline(x=gan_max_idx, color='g', linestyle='--', label=f'Punto de corte a la ganancia máxima {gan_max_idx}')
+    plt.axhline(y=ganancia_max, color='r', linestyle='--', label=f'Ganancia máxima {ganancia_max}')
+    plt.title('Curva de Ganancia')
+    plt.xlabel('Clientes')
+    plt.ylabel('Ganancia')
+    plt.legend()
+    plt.savefig(f"output/graphics/ganancia_prob_client{STUDY_NAME}.png", bbox_inches='tight')
+
+    logger.info("Pipeline ENDED!")
+
 def compare():
     pred1 = pd.read_csv("output/prediction/prediccion_patito.csv", sep=',')
     pred2 = pd.read_csv("output/prediction/prediccion_20251003.csv", sep=',')
@@ -243,3 +358,4 @@ if __name__ == "__main__":
     main()
     kaggle_prediction()
     # compare()
+    # evaluate_threshold()

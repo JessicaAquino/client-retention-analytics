@@ -29,11 +29,9 @@ logger = logging.getLogger(__name__)
 def entrenamiento_lgbm(X_train:pd.DataFrame ,y_train_binaria:pd.Series,w_train:pd.Series, 
                        best_iter:int, best_parameters:dict[str, object], tt_cfg :TrainTestConfig
                        )->lgb.Booster:
-    name=f"lgbm_model_{tt_cfg.name}"
     logger.info(f"Comienzo del entrenamiento del lgbm : {tt_cfg.name}")
         
-    best_iter = best_iter
-    print(f"Mejor cantidad de árboles para el mejor model {best_iter}")
+    logger.info(f"Mejor cantidad de árboles para el mejor model {best_iter}")
     params = {
         'objective': 'binary',
         'boosting_type': 'gbdt',
