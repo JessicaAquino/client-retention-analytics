@@ -144,8 +144,8 @@ def main():
 def kaggle_prediction():
     STUDY_NAME = "_20251010_01"
     
-    NEW_STUDY = "_20251011_06"
-    TOP_N = 14000
+    NEW_STUDY = "_20251011_07"
+    TOP_N = 15000
 
     logger.info("STARTING this wonderful pipeline!")
 
@@ -236,6 +236,9 @@ def kaggle_prediction():
 
     # Logging & save
     logger.info(f"cantidad de bajas predichas (top {TOP_N}): {y_test_binary['Predicted'].sum()}")
+
+    y_test_binary_copy = y_test_binary.set_index("numero_de_cliente")
+    y_test_binary_copy.to_csv(f"output/prediction/prediccion{STUDY_NAME}_prob.csv")
 
     y_test_binary = y_test_binary.set_index("numero_de_cliente")[["Predicted"]]
     y_test_binary.to_csv(f"output/prediction/prediccion{NEW_STUDY}.csv")
