@@ -412,5 +412,5 @@ if __name__ == "__main__":
     # kaggle_prediction()
     # compare()
     # evaluate_threshold()
-    top_clients = get_top_n_predictions("output/prediction/prediccion_20251010_01_prob.csv", n=13100)
-    top_clients.write_csv("output/prediction/prediccion_20251011_08.csv")
+    top_clients = get_top_n_predictions("output/prediction/prediccion_20251010_01_prob.csv", n=12900)
+    top_clients.write_csv("output/prediction/prediccion_20251011_09.csv")
