@@ -142,10 +142,10 @@ def main():
     logger.info("Pipeline ENDED!")
 
 def kaggle_prediction():
-    STUDY_NAME = "_20251009_01"
+    STUDY_NAME = "_20251010_01"
     
-    NEW_STUDY = "_20251011_03"
-    TOP_N = 17000
+    NEW_STUDY = "_20251011_04"
+    TOP_N = 12200
 
     logger.info("STARTING this wonderful pipeline!")
 
@@ -171,10 +171,10 @@ def kaggle_prediction():
         "ratio": {
             "pairs": cols_ratios
         },
-        # "linreg": {
-        #     "columns": cols_lag_delta_max_min_regl,
-        #     "window": 3
-        # }
+        "linreg": {
+            "columns": cols_lag_delta_max_min_regl,
+            "window": 3
+        }
     })
 
     # 3. Preprocessing
