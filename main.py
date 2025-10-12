@@ -143,9 +143,9 @@ def main():
     logger.info("Pipeline ENDED!")
 
 def kaggle_prediction():
-    STUDY_NAME = "_20251010_01"
+    STUDY_NAME = "_20251003"
     
-    NEW_STUDY = "_20251011_08"
+    NEW_STUDY = "_20251011_10"
     TOP_N = 13500
 
     logger.info("STARTING this wonderful pipeline!")
@@ -172,10 +172,10 @@ def kaggle_prediction():
         "ratio": {
             "pairs": cols_ratios
         },
-        "linreg": {
-            "columns": cols_lag_delta_max_min_regl,
-            "window": 3
-        }
+        # "linreg": {
+        #     "columns": cols_lag_delta_max_min_regl,
+        #     "window": 3
+        # }
     })
 
     # 3. Preprocessing
@@ -190,7 +190,7 @@ def kaggle_prediction():
 
     # 4. Best hyperparams loading
     name_best_params_file = f"best_params_binary{STUDY_NAME}.json"
-    storage_name = "sqlite:///" + PATH_LGBM_OPT_DB + "optimization_lgbm_vm.db"
+    storage_name = "sqlite:///" + PATH_LGBM_OPT_DB + "optimization_lgbm_best.db"
     study = optuna.load_study(study_name='study_lgbm_binary'+STUDY_NAME, storage=storage_name)
     
     # 5. Training with best attempt and hyperparams
@@ -409,8 +409,8 @@ if __name__ == "__main__":
     lc.setup_logging(PATH_LOGS)
 
     # main()
-    # kaggle_prediction()
+    kaggle_prediction()
     # compare()
     # evaluate_threshold()
-    top_clients = get_top_n_predictions("output/prediction/prediccion_20251010_01_prob.csv", n=12900)
-    top_clients.write_csv("output/prediction/prediccion_20251011_09.csv")
+    # top_clients = get_top_n_predictions("output/prediction/prediccion_20251010_01_prob.csv", n=12900)
+    # top_clients.write_csv("output/prediction/prediccion_20251011_09.csv")
