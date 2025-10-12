@@ -27,11 +27,11 @@ class LightGBMObjective:
             'first_metric_only': True,
             'boost_from_average': True,
             'feature_pre_filter': False,
-            'num_leaves': trial.suggest_int('num_leaves', 8, 100),
-            'learning_rate': trial.suggest_float('learning_rate', 0.005, 0.3),
-            'min_data_in_leaf': trial.suggest_int('min_data_in_leaf', 1, 1000),
-            'feature_fraction': trial.suggest_float('feature_fraction', 0.1, 1.0),
-            'bagging_fraction': trial.suggest_float('bagging_fraction', 0.1, 1.0),
+            'num_leaves': trial.suggest_int('num_leaves', 80, 150),
+            'learning_rate': trial.suggest_float('learning_rate', 0.010, 0.2),
+            'min_data_in_leaf': trial.suggest_int('min_data_in_leaf', 400, 1000),
+            'feature_fraction': trial.suggest_float('feature_fraction', 0.1, 0.7),
+            'bagging_fraction': trial.suggest_float('bagging_fraction', 0.1, 0.4),
             'seed': self.cfg.seeds[0],
             'verbose': -1
         }
