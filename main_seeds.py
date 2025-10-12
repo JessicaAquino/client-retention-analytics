@@ -289,7 +289,7 @@ def get_top_n_predictions(csv_path: str, n: int) -> pl.DataFrame:
     df = pl.read_csv(csv_path)
 
     # 2. Sort descending by PredictedProb
-    df = df.sort("PredictedProb", descending=True)
+    df = df.sort("PredictedProb_01", descending=True)
 
     # 3. Assign 1 to top N, 0 to rest
     df = df.with_columns(
@@ -330,5 +330,5 @@ if __name__ == "__main__":
     # kaggle_prediction()
     # compare()
     # evaluate_threshold()
-    top_clients = get_top_n_predictions("output/prediction/prediccion_20251012_02_prob.csv", n=8000)
-    top_clients.write_csv("output/prediction/prediccion_20251012_11.csv")
+    top_clients = get_top_n_predictions("output/prediction/prediccion_20251012_02_prob.csv", n=11000)
+    top_clients.write_csv("output/prediction/prediccion_20251012_13.csv")
